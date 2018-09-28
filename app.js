@@ -10,8 +10,15 @@ app.get('/api', (req, res) => {
 });
 
 app.post('/api/posts', verifyToken, (req, res) => {
-    res.json({
-        message: 'Post created...'
+    jwt.verify(req.token, 'secretkey', (err, authData) => {
+        if(err) {
+            res.sendStatus(403);
+        } else {
+            res.json({
+                message: 'Post created...',
+                authData
+            });
+        }
     });
 })
 
@@ -23,7 +30,7 @@ app.post('/api/login', (req, res) => {
         email: 'sholom@gmail.com'
     }
 
-    jwt.sign({user}, 'secretkey', (err, token) => {
+    jwt.sign({user}, 'secretkey', {expiresIn: '30m' },(err, token) => {
         res.json({
             token
         });
@@ -33,7 +40,10 @@ app.post('/api/login', (req, res) => {
 function verifyToken(req, res, next) {
     const bearerHeader = req.headers['authorization'];
     if(typeof bearerHeader !== 'undefined') {
-
+        const bearer = bearerHeader.split(' ');
+        const bearerToken = bearer[1];
+        req.token = bearerToken;
+        next();
     } else {
         res.sendStatus(403);
     }
